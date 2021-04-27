@@ -8,7 +8,7 @@ import android.widget.Button
 
 class MainActivity : AppCompatActivity() {
     lateinit var drawingView: CasseBriqueView
-
+    //Commentaire pour tester
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
