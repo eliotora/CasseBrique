@@ -138,12 +138,12 @@ class CasseBriqueView @JvmOverloads constructor (context: Context?, attributes: 
         var i = 0
         while(!flag && i < bonus.size) {
             if(bonus[i].dead) {
-                bonus[i] = Bonus(b.r.centerX(), b.r.centerY())
+                bonus[i] = Bonus(b.r.centerX(), b.r.centerY(), context)
                 flag = true
             }
             i++
         }
-        if (!flag) bonus.add(Bonus(b.r.centerX(), b.r.centerY()))
+        if (!flag) bonus.add(Bonus(b.r.centerX(), b.r.centerY(), context))
     }
 
     fun activateBonus(type: Int) {
