@@ -9,12 +9,14 @@ import android.graphics.Color
 import android.graphics.Paint
 import android.graphics.RectF
 import android.os.Bundle
+import android.os.health.SystemHealthManager
 import android.util.AttributeSet
 import android.view.SurfaceHolder
 import android.view.SurfaceView
 import android.view.MotionEvent
 import androidx.fragment.app.DialogFragment
 import androidx.fragment.app.FragmentActivity
+import java.lang.Math.floor
 import java.util.*
 import kotlin.collections.ArrayList
 
@@ -29,10 +31,14 @@ class CasseBriqueView @JvmOverloads constructor (context: Context?, attributes: 
     lateinit var canvas: Canvas
     var screenWidth = 0f
     var screenHeight = 0f
-    lateinit var barre: Barre
-    lateinit var balle: Balle
-    lateinit var parois: ArrayList<Parois>
+    var barre: Barre = Barre(screenWidth / 2, 6 * screenHeight / 8, screenWidth / 5, this)
+    var lesBalles : ArrayList<Balle> = arrayListOf(Balle(0f, 0f, 35f))
+    //var balle= Balle(0f, 0f, 35f)
+    var parois: ArrayList<Parois> = arrayListOf(Parois(5f, 5f, 25f, screenHeight),
+            Parois(5f, 5f, screenWidth - 25f, 25f),
+            Parois(screenWidth - 25f, 5f, screenWidth, screenHeight))
     var briques = ArrayList<Brique>()
+    var bonus = ArrayList<Bonus>()
     val activity = context as FragmentActivity
     var text: String = " "
     var life = 3
@@ -40,13 +46,18 @@ class CasseBriqueView @JvmOverloads constructor (context: Context?, attributes: 
 
     init {
         backgroundPaint.color = Color.BLACK
-        lifePaint.setColor(Color.WHITE)
+        lifePaint.color = Color.WHITE
         deadPaint.setColor(Color.MAGENTA)
+        val x1 = -screenWidth / 12
+        val y1 = 2 * screenHeight / 10
+        val a = screenWidth / 6
+        val b = screenHeight / 20
         for (i in 1..3) {
             for (j in 1..5) {
-                briques.add(Brique(0f + j * 1f, 0f + i * 1f, 0f + (j + 1) * 1f, 0f + (i + 1) * 1f))
+                briques.add(Brique(x1 + j * a, y1 + i * b, x1 + (j + 1) * a, y1 + (i + 1) * b, this))
             }
         }
+
     }
 
     override fun onSizeChanged(w: Int, h: Int, oldw: Int, oldh: Int) {
@@ -57,8 +68,8 @@ class CasseBriqueView @JvmOverloads constructor (context: Context?, attributes: 
         val y1 = 2 * screenHeight / 10
         val a = screenWidth / 6
         val b = screenHeight / 20
-        barre = Barre(screenWidth / 2, 6 * screenHeight / 8, screenWidth / 5)
-        balle = Balle(screenWidth / 2, 23 * screenHeight / 32, 35f)
+        barre = Barre(screenWidth / 2, 6 * screenHeight / 8, screenWidth / 5, this)
+        lesBalles[0] = Balle(screenWidth / 2, 23 * screenHeight / 32, 35f)
         parois = arrayListOf(
                 Parois(5f, 5f, 25f, screenHeight),
                 Parois(5f, 5f, screenWidth - 25f, 25f),
@@ -80,8 +91,72 @@ class CasseBriqueView @JvmOverloads constructor (context: Context?, attributes: 
     override fun surfaceDestroyed(holder: SurfaceHolder) {}
 
     override fun run() {
+        var lastTimeFrame =System.currentTimeMillis()
         while (drawing) {
+            val time = System.currentTimeMillis()
+            val dTime: Double = (time - lastTimeFrame).toDouble()
+            updatePos(dTime)
             draw()
+            lastTimeFrame = time
+        }
+    }
+
+    fun updatePos(dTime: Double) {
+        val dTimeSec = dTime/1000.0
+        var stillABalleOnScreen = false
+        for (b in lesBalles) {
+            b.bouge(dTimeSec, parois, barre, briques, deadzone)
+            if (!b.dead) stillABalleOnScreen = true
+        }
+        if (!stillABalleOnScreen) {
+            life-=1
+            newBalle()
+        }
+        for (bo in bonus) {
+            if(!bo.dead) activateBonus(bo.updatePos(dTimeSec, barre))
+        }
+        barre.update(dTimeSec)
+        if (life < 1) {
+            drawing = false
+            showMenu(R.string.perdu)
+        }
+        var win = true
+        for (b in briques) if (!b.dead) win = false
+        if (win) {
+            drawing = false
+            showMenu(R.string.win)
+        }
+    }
+
+    fun newBalle() {
+        lesBalles = arrayListOf(Balle(screenWidth / 2, 23 * screenHeight / 32, 35f))
+        barre = Barre(screenWidth / 2, 6 * screenHeight / 8, screenWidth / 5, this)
+    }
+
+    fun createBonus(b: Brique) {
+        var flag = false
+        var i = 0
+        while(!flag && i < bonus.size) {
+            if(bonus[i].dead) {
+                bonus[i] = Bonus(b.r.centerX(), b.r.centerY())
+                flag = true
+            }
+            i++
+        }
+        if (!flag) bonus.add(Bonus(b.r.centerX(), b.r.centerY()))
+    }
+
+    fun activateBonus(type: Int) {
+        when(type) {
+            0 -> if(life < 3) life++
+            1 -> {
+                for(b in lesBalles) if(!b.dead) {
+                    lesBalles.add(Balle(b.balle.centerX(), b.balle.centerY(), 35f))
+                    break
+                }
+            }
+            2 -> for (b in lesBalles) b.slow()//  / vitesse
+            3 -> barre.wide() //* barre
         }
     }
 
@@ -89,13 +164,17 @@ class CasseBriqueView @JvmOverloads constructor (context: Context?, attributes: 
         if (holder.surface.isValid) {
             canvas = holder.lockCanvas()
             canvas.drawRect(0F, 0F, canvas.width.toFloat(), canvas.height.toFloat(), backgroundPaint)
+            canvas.drawText(text, 100f, 100f, lifePaint)
             barre.draw(canvas)
-            balle.draw(canvas)
+            for (ba in lesBalles) if(!ba.dead) ba.draw(canvas)
             for (p in parois) {
                 p.draw(canvas)
             }
-            for (b in briques) {
-                b.draw(canvas)
+            for (br in briques) {
+                if(!br.dead) br.draw(canvas)
+            }
+            for (bo in bonus) {
+                if (!bo.dead) bo.draw(canvas)
             }
             val e = 20f
             val r = 12f
@@ -136,8 +215,6 @@ class CasseBriqueView @JvmOverloads constructor (context: Context?, attributes: 
                 builder.setNegativeButton("Continuer", DialogInterface.OnClickListener { _, _ -> resume()})
                 return builder.create()
             }
-
-
         }
         activity.runOnUiThread(
                 Runnable {
@@ -159,6 +236,9 @@ class CasseBriqueView @JvmOverloads constructor (context: Context?, attributes: 
             b.resistance = 3
             b.dead = false
         }
+        bonus = arrayListOf()
+        lesBalles= arrayListOf(Balle(screenWidth / 2, 23 * screenHeight / 32, 35f))
+        barre = Barre(screenWidth / 2, 6 * screenHeight / 8, screenWidth / 5, this)
         life = 3
         resume()
     }
