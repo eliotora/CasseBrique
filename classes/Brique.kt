@@ -10,6 +10,7 @@ import kotlin.collections.ArrayList
 class Brique (x1: Float, y1: Float, x2: Float, y2: Float, v: CasseBriqueView): Parois(x1, y1, x2, y2) {
     var sprite = RectF(r.left+2f, r.top+2f, r.right-2f, r.bottom-2f)
     var random = Random()
+    var color = Color.argb(255, random.nextInt(256), random.nextInt(256), random.nextInt(256))
     var resistance: Int = 3
     var dead = false
     val view= v
@@ -17,8 +18,6 @@ class Brique (x1: Float, y1: Float, x2: Float, y2: Float, v: CasseBriqueView): P
     init {
         changeCouleur()
     }
-
-    private fun remove(element: RectF) {}
 
     fun changeCouleur() {
         when(resistance) {
@@ -46,7 +45,7 @@ class Brique (x1: Float, y1: Float, x2: Float, y2: Float, v: CasseBriqueView): P
 
     fun meure(){
         dead = true
-        if (random.nextDouble()> 0.8f) view.createBonus(this)
+        if (random.nextDouble()> 0.1f) view.createBonus(this)
     }
 
      fun resize(rec: RectF) {
