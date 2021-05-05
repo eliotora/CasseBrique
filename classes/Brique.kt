@@ -45,7 +45,7 @@ class Brique (x1: Float, y1: Float, x2: Float, y2: Float, v: CasseBriqueView): P
 
     fun meure(){
         dead = true
-        if (random.nextDouble()> 0.1f) view.createBonus(this)
+        if (random.nextDouble()> 0.66f) view.createBonus(this)
     }
 
      fun resize(rec: RectF) {
