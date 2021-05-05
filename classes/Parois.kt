@@ -15,14 +15,14 @@ open class Parois (x1: Float, y1: Float, x2: Float, y2: Float) {
         canvas.drawRect(r, paint)
     }
 
-    open fun gereBalle(b: Balle): Boolean {
+    open fun gereBalle(b: Balle, dTime: Double): Boolean {
         var flag = false
         if (RectF.intersects(r, b.balle)) {
-            if (b.balle.right >= r.left || b.balle.left <= r.right) {
-                b.paroi_interract(false)
+            if (b.balle.centerX() <= r.left || b.balle.centerX() >= r.right) {
+                b.paroi_interract(false, dTime)
             }
-            if (b.balle.top <= r.bottom || b.balle.bottom >= r.top) {
-                b.paroi_interract(true)
+            if (b.balle.centerY() >= r.bottom || b.balle.centerY() <= r.top) {
+                b.paroi_interract(true, dTime)
             }
             flag = true
         }

@@ -7,18 +7,17 @@ import android.graphics.RectF
 import java.util.*
 import kotlin.collections.ArrayList
 
-class Brique (x1: Float, y1: Float, x2: Float, y2: Float): Parois(x1, y1, x2, y2) {
+class Brique (x1: Float, y1: Float, x2: Float, y2: Float, v: CasseBriqueView): Parois(x1, y1, x2, y2) {
     var sprite = RectF(r.left+2f, r.top+2f, r.right-2f, r.bottom-2f)
     var random = Random()
     var color = Color.argb(255, random.nextInt(256), random.nextInt(256), random.nextInt(256))
     var resistance: Int = 3
     var dead = false
+    val view= v
 
     init {
         changeCouleur()
     }
-
-    private fun remove(element: RectF) {}
 
     fun changeCouleur() {
         when(resistance) {
@@ -29,11 +28,11 @@ class Brique (x1: Float, y1: Float, x2: Float, y2: Float): Parois(x1, y1, x2, y2
         }
     }
 
-    override fun gereBalle(b: Balle): Boolean {
-        var collision = super.gereBalle(b)
+    override fun gereBalle(b: Balle, dTime: Double): Boolean {
+        var collision = super.gereBalle(b, dTime)
         if (collision) {
             resistance -=1
-            if (resistance <= 0) this.meure()
+            if (resistance <= 0) meure()
         }
         changeCouleur()
         return collision
@@ -44,23 +43,9 @@ class Brique (x1: Float, y1: Float, x2: Float, y2: Float): Parois(x1, y1, x2, y2
         canvas.drawRect(sprite, paint)
     }
 
-    fun creeBonus (lesbriques: ArrayList<Brique>, dead : Boolean) {
-        var resistance = 1
-        val bonus = random.nextBoolean()
-        for (b in lesbriques)
-            if (bonus) {
-                resistance += 1
-            }
-            else {
-                resistance = 0
-            }
-        if (resistance == 0){
-            remove(r)
-        }
-    }
-
     fun meure(){
         dead = true
+        if (random.nextDouble()> 0.1f) view.createBonus(this)
     }
 
      fun resize(rec: RectF) {
