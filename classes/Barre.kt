@@ -8,12 +8,11 @@ import android.view.MotionEvent
 import kotlin.math.PI
 import kotlin.math.atan
 
-class Barre (x0: Float, y1: Float, width: Float, v: CasseBriqueView): Parois(x0-width/2, y1, x0+width/2, y1 + 50F) {
+class Barre (x0: Float, y1: Float, width: Float): Parois(x0-width/2, y1, x0+width/2, y1 + 50F) {
     var sprite = RectF(x0-width/2, y1, x0+width/2, y1+20f)
     var x: Float = x0
     val y = y1
     var w = width
-    val view = v
     var wideT = 0.0
 
 
@@ -64,7 +63,6 @@ class Barre (x0: Float, y1: Float, width: Float, v: CasseBriqueView): Parois(x0-
                     new_dir = PI/2
                 }
             }
-            if (new_dir>= 0) view.text = "Angle = " + new_dir.toString()
             b.barre_interract(new_dir, dTime)
         }
         return flag

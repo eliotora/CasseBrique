@@ -1,27 +1,32 @@
 package com.example.cassebrique
 
-import android.graphics.Canvas
-import android.graphics.Color
-import android.graphics.Paint
-import android.graphics.RectF
+import android.content.Context
+import android.graphics.*
+import android.graphics.drawable.Drawable
+import android.os.Build
+import androidx.annotation.RequiresApi
 import java.util.*
 
-class Bonus(x1: Float, y1: Float) {
+class Bonus(x1: Float, y1: Float, context: Context) {
     val random = Random()
     var type = -1
     val v = 100f
-    val r = RectF(x1-20f, y1-20f,x1+20f,y1+20f)
+    var r : RectF
     val paint = Paint()
     var dead = false
+    lateinit var image: Bitmap
 
     init{
         type = random.nextInt(4)
         when(type){
-            0 -> paint.color = Color.RED // +1 vie
-            1 -> paint.color = Color.WHITE // +1 balle
-            2 -> paint.color = Color.BLUE // balle(s) plus lente(s)
-            3 -> paint.color = Color.GREEN // barre plus large
+            0 -> image = BitmapFactory.decodeResource(context.resources, R.drawable.bonuslife) // +1 vie
+            1 -> image = BitmapFactory.decodeResource(context.resources, R.drawable.bonusballe) // +1 balle
+            2 -> image = BitmapFactory.decodeResource(context.resources, R.drawable.bonusslow) // balle(s) plus lente(s)
+            3 -> image = BitmapFactory.decodeResource(context.resources, R.drawable.bonuswide) // barre plus large
         }
+        val w = image.width.toFloat()
+        val h = image.height.toFloat()
+        r = RectF(x1-w/2,y1-h/2,x1+w/2,y1+h/2)
     }
 
     fun updatePos(dTime: Double, laBarre: Barre): Int {
@@ -34,6 +39,6 @@ class Bonus(x1: Float, y1: Float) {
     }
 
     fun draw(canvas: Canvas) {
-        canvas.drawOval(r, paint)
+        canvas.drawBitmap(image, r.left, r.top,null)
     }
 }

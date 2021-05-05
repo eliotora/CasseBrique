@@ -12,7 +12,7 @@ class Balle (x1: Float, y1: Float, val diametre: Float) {
     val balle = RectF(x1 - diametre/2, y1 - diametre/2, x1 + diametre/2, y1 + diametre/2)
     val random = Random()
     val paint = Paint()
-    var v = 500F
+    var v = 400F
     var dir = PI/2
     var dead : Boolean = false
     var slowedT = 0.0
