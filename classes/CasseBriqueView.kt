@@ -22,32 +22,29 @@ import kotlin.collections.ArrayList
 
 
 class CasseBriqueView @JvmOverloads constructor (context: Context?, attributes: AttributeSet? = null, defStyleAttr: Int = 0): SurfaceView(context, attributes,defStyleAttr), SurfaceHolder.Callback,Runnable {
+    var inited = false
     val backgroundPaint = Paint()
     val lifePaint = Paint()
-    val deadPaint = Paint()
     lateinit var thread: Thread
-    val random = Random()
     var drawing = false
     lateinit var canvas: Canvas
     var screenWidth = 0f
     var screenHeight = 0f
-    var barre: Barre = Barre(screenWidth / 2, 6 * screenHeight / 8, screenWidth / 5, this)
+    var barre: Barre = Barre(screenWidth / 2, 6 * screenHeight / 8, screenWidth / 5)
     var lesBalles : ArrayList<Balle> = arrayListOf(Balle(0f, 0f, 35f))
-    //var balle= Balle(0f, 0f, 35f)
     var parois: ArrayList<Parois> = arrayListOf(Parois(5f, 5f, 25f, screenHeight),
             Parois(5f, 5f, screenWidth - 25f, 25f),
             Parois(screenWidth - 25f, 5f, screenWidth, screenHeight))
     var briques = ArrayList<Brique>()
     var bonus = ArrayList<Bonus>()
     val activity = context as FragmentActivity
-    var text: String = " "
     var life = 3
     var deadzone : Float = 0f
 
     init {
+        showNewGame(R.string.menu)
         backgroundPaint.color = Color.BLACK
         lifePaint.color = Color.WHITE
-        deadPaint.setColor(Color.MAGENTA)
         val x1 = -screenWidth / 12
         val y1 = 2 * screenHeight / 10
         val a = screenWidth / 6
@@ -68,7 +65,7 @@ class CasseBriqueView @JvmOverloads constructor (context: Context?, attributes: 
         val y1 = 2 * screenHeight / 10
         val a = screenWidth / 6
         val b = screenHeight / 20
-        barre = Barre(screenWidth / 2, 6 * screenHeight / 8, screenWidth / 5, this)
+        barre = Barre(screenWidth / 2, 6 * screenHeight / 8, screenWidth / 5)
         lesBalles[0] = Balle(screenWidth / 2, 23 * screenHeight / 32, 35f)
         parois = arrayListOf(
                 Parois(5f, 5f, 25f, screenHeight),
@@ -78,10 +75,10 @@ class CasseBriqueView @JvmOverloads constructor (context: Context?, attributes: 
         for (i in 1..3) {
             for (j in 1..5) {
                 briques[(i-1)*5+(j-1)].resize(RectF(x1 + j * a, y1 + i * b, x1 + (j + 1) * a, y1 + (i + 1) * b))
-            //briques.add(Brique(x1 + j * a, y1 + i * b, x1 + (j + 1) * a, y1 + (i + 1) * b))
             }
         }
         deadzone = 13*screenHeight/16
+        inited = true
     }
 
     override fun surfaceChanged(holder: SurfaceHolder, format: Int, width: Int, height: Int) {}
@@ -130,7 +127,7 @@ class CasseBriqueView @JvmOverloads constructor (context: Context?, attributes: 
 
     fun newBalle() {
         lesBalles = arrayListOf(Balle(screenWidth / 2, 23 * screenHeight / 32, 35f))
-        barre = Barre(screenWidth / 2, 6 * screenHeight / 8, screenWidth / 5, this)
+        barre = Barre(screenWidth / 2, 6 * screenHeight / 8, screenWidth / 5)
     }
 
     fun createBonus(b: Brique) {
@@ -148,7 +145,7 @@ class CasseBriqueView @JvmOverloads constructor (context: Context?, attributes: 
 
     fun activateBonus(type: Int) {
         when(type) {
-            0 -> if(life < 3) life++
+            0 -> life++
             1 -> {
                 for(b in lesBalles) if(!b.dead) {
                     lesBalles.add(Balle(b.balle.centerX(), b.balle.centerY(), 35f))
@@ -164,7 +161,6 @@ class CasseBriqueView @JvmOverloads constructor (context: Context?, attributes: 
         if (holder.surface.isValid) {
             canvas = holder.lockCanvas()
             canvas.drawRect(0F, 0F, canvas.width.toFloat(), canvas.height.toFloat(), backgroundPaint)
-            canvas.drawText(text, 100f, 100f, lifePaint)
             barre.draw(canvas)
             for (ba in lesBalles) if(!ba.dead) ba.draw(canvas)
             for (p in parois) {
@@ -178,13 +174,16 @@ class CasseBriqueView @JvmOverloads constructor (context: Context?, attributes: 
             }
             val e = 20f
             val r = 12f
-            for (i in 1..life) {
-                val rect = RectF(screenWidth/2+ (i-2)*(2*r+e) - r, 14*screenHeight/16 - r,
-                        screenWidth/2 + (i-2)*(2*r+e) + r,
+            val w = life*2*r + e*(life-1)
+            for (i in 1..life) { // Ici bon exemple d'utilisation du garbage collector
+                val rect = RectF((screenWidth-w)/2 + (i-1)*(2*r+e), 14*screenHeight/16 - r,
+                        (screenWidth-w)/2 + (i-1)*(2*r+e) + 2*r,
                         14*screenHeight/16 + r)
+                /*val rect = RectF(screenWidth/2+ (i-2)*(2*r+e) - r, 14*screenHeight/16 - r,
+                        screenWidth/2 + (i-2)*(2*r+e) + r,
+                        14*screenHeight/16 + r)*/
                 canvas.drawOval(rect, lifePaint)
             }
-            //canvas.drawRect(0f, deadzone, screenWidth, deadzone + 50f, deadPaint)
             holder.unlockCanvasAndPost(canvas)
         }
     }
@@ -195,9 +194,11 @@ class CasseBriqueView @JvmOverloads constructor (context: Context?, attributes: 
     }
 
     fun resume() {
-        drawing = true
-        thread = Thread(this)
-        thread.start()
+        if (inited) {
+            drawing = true
+            thread = Thread(this)
+            thread.start()
+        }
     }
 
     override fun onTouchEvent(e: MotionEvent): Boolean {
@@ -212,7 +213,32 @@ class CasseBriqueView @JvmOverloads constructor (context: Context?, attributes: 
                 builder.setTitle(resources.getString(messageId))
                 builder.setMessage("Tu veux recommencer?")
                 builder.setPositiveButton("Recommencer", DialogInterface.OnClickListener { _, _ -> newGame() })
-                builder.setNegativeButton("Continuer", DialogInterface.OnClickListener { _, _ -> resume()})
+                if (messageId== R.string.menu) builder.setNegativeButton("Continuer", DialogInterface.OnClickListener { _, _ -> resume()})
+                return builder.create()
+            }
+        }
+        activity.runOnUiThread(
+                Runnable {
+                    val ft = activity.supportFragmentManager.beginTransaction()
+                    val prev = activity.supportFragmentManager.findFragmentByTag("dialog")
+                    if (prev != null) {
+                        ft.remove(prev)
+                    }
+                    ft.addToBackStack(null)
+                    val menu = Menu()
+                    menu.setCancelable(false)
+                    menu.show(ft, "dialog")
+                }
+        )
+    }
+
+    fun showNewGame(messageId: Int) {
+        class Menu : DialogFragment() {
+            override fun onCreateDialog(savedInstanceState: Bundle?): Dialog {
+                val builder = AlertDialog.Builder(activity)
+                builder.setTitle(resources.getString(messageId))
+                builder.setMessage("Tu veux recommencer?")
+                builder.setPositiveButton("Commencer", DialogInterface.OnClickListener { _, _ -> newGame() })
                 return builder.create()
             }
         }
@@ -238,7 +264,7 @@ class CasseBriqueView @JvmOverloads constructor (context: Context?, attributes: 
         }
         bonus = arrayListOf()
         lesBalles= arrayListOf(Balle(screenWidth / 2, 23 * screenHeight / 32, 35f))
-        barre = Barre(screenWidth / 2, 6 * screenHeight / 8, screenWidth / 5, this)
+        barre = Barre(screenWidth / 2, 6 * screenHeight / 8, screenWidth / 5)
         life = 3
         resume()
     }
